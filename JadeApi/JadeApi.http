@@ -1,6 +1,0 @@
-@JadeApi_HostAddress = http://localhost:5045
-
-GET {{JadeApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
