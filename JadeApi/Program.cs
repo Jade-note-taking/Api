@@ -1,13 +1,14 @@
 using System.Text.Json.Serialization;
 using Auth0.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
+using JadeApi.Hubs;
 
 const string version = "v0.0.0";
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
@@ -26,9 +27,12 @@ builder.Services.AddControllers().AddJsonOptions(o => {
     o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
+// Swagger
+builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Jade note taking swagger", Version = version, Description = "Refer to github for docs: https://github.com/jade-note-taking/api"});
+    c.AddSignalRSwaggerGen();
 
     // NOTE: oauth2 from swagger docs, add later
     // c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
@@ -62,9 +66,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-app.MapControllers();
+// Auth0
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Route mapping
+app.MapHub<NotesHub>("/hub/notes");
+app.MapControllers();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment()) {
@@ -72,4 +80,5 @@ if (app.Environment.IsDevelopment()) {
     app.UseSwaggerUI();
 }
 
+// Running app
 app.Run();
