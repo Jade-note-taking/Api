@@ -71,13 +71,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Route mapping
-app.MapHub<NotesHub>("/hub/notes");
+app.MapHub<NotesHub>("/Hub/Notes");
+app.MapHub<FoldersHub>("/Hub/Folders");
 app.MapControllers();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+else
+{
+    app.UseHttpsRedirection();
+    // app.UseExceptionHandler("/Error");
 }
 
 // Running app
