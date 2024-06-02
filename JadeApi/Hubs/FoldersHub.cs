@@ -11,9 +11,9 @@ public class FoldersHub : Hub
     [SignalRMethod("Create")]
     public async Task Create(string folderName)
     {
-        // Create folder and sent it with folders.create
+        // Create folder and sent it with Folders.Create
 
-        await Clients.All.SendAsync("folders.create");
+        await Clients.All.SendAsync("Folders.Create");
     }
 
     [Authorize]
@@ -24,6 +24,6 @@ public class FoldersHub : Hub
         // Check if folder is empty from notes
         // Perform deletion
 
-        await Clients.All.SendAsync("folders.delete", folderId);
+        await Clients.All.SendAsync("Folders.Delete", folderId);
     }
 }

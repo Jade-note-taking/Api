@@ -11,10 +11,13 @@ public class NotesHub : Hub
     [SignalRMethod("Create")]
     public async Task Create(string noteName, string startLocation)
     {
-        // Create note and sent it with notes.create
+        // Create note and sent it with Notes.Create
         // Check weather startLocation is correct
 
-        await Clients.All.SendAsync("notes.create");
+        Console.WriteLine(noteName);
+        Console.WriteLine(startLocation);
+        // TODO: Make groups of client, you don't want to send e verywone a message
+        await Clients.All.SendAsync("Notes.Create");
     }
 
     [Authorize]
@@ -23,7 +26,7 @@ public class NotesHub : Hub
     {
         // perform check weather noteId belongs to the user
 
-        await Clients.All.SendAsync("notes.update", noteId, data);
+        await Clients.All.SendAsync("Notes.Update", noteId, data);
         // TODO: In the future make it possible to sent not all the data but a partial data, reducing network overhead
     }
 
@@ -35,7 +38,7 @@ public class NotesHub : Hub
         // Perform check on newFolderId and oldFolderId presence
         // Move in database
 
-        await Clients.All.SendAsync("notes.move", noteId, newFolderId, oldFolderId);
+        await Clients.All.SendAsync("Notes.Move", noteId, newFolderId, oldFolderId);
     }
 
     [Authorize]
@@ -45,7 +48,7 @@ public class NotesHub : Hub
         // Perform check weather noteId belongs to the user
         // Remove note from database
 
-        await Clients.All.SendAsync("notes.delete", noteId);
+        await Clients.All.SendAsync("Notes.Delete", noteId);
     }
 
     [Authorize]
@@ -55,6 +58,6 @@ public class NotesHub : Hub
         // Perform check weather noteId belongs to the user
         // Archive note
 
-        await Clients.All.SendAsync("notes.archive", noteId);
+        await Clients.All.SendAsync("Notes.Archive", noteId);
     }
 }
