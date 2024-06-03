@@ -71,8 +71,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Route mapping
-app.MapHub<NotesHub>("/Hub/Notes");
-app.MapHub<FoldersHub>("/Hub/Folders");
+app.MapHub<NotesHub>("/Hub/Note");
+app.MapHub<FoldersHub>("/Hub/Folder");
 app.MapControllers();
 
 // Configure the HTTP request pipeline.

@@ -4,19 +4,17 @@ using SignalRSwaggerGen.Attributes;
 
 namespace JadeApi.Hubs;
 
-[SignalRHub("/Hub/Folders")]
+[SignalRHub("/Hub/Folder")]
 public class FoldersHub : Hub
 {
-    [Authorize]
     [SignalRMethod("Create")]
     public async Task Create(string folderName)
     {
-        // Create folder and sent it with Folders.Create
+        // Create folder and sent it with Folder.Create
 
-        await Clients.All.SendAsync("Folders.Create");
+        await Clients.All.SendAsync("Folder.Create");
     }
 
-    [Authorize]
     [SignalRMethod("Delete")]
     public async Task Delete(string folderId)
     {
@@ -24,6 +22,6 @@ public class FoldersHub : Hub
         // Check if folder is empty from notes
         // Perform deletion
 
-        await Clients.All.SendAsync("Folders.Delete", folderId);
+        await Clients.All.SendAsync("Folder.Delete", folderId);
     }
 }
