@@ -3,19 +3,16 @@ using Auth0.AspNetCore.Authentication;
 using JadeApi.Data;
 using Microsoft.OpenApi.Models;
 using JadeApi.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 const string version = "v0.0.0";
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connection = builder.Configuration["DB:AzureSqlConnection"] ?? "CONFIGURATION DB:AZURESQLCONNECTION NOT FOUND";
-
-builder.Services.AddDbContext<JadeDbContext>(options =>
-    options.UseSqlServer(connection));
-
 builder.Services.AddSignalR();
-builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
@@ -23,16 +20,40 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
  options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 // builder.Services.ConfigureSameSiteNoneCookies();
-
-builder.Services.AddAuth0WebAppAuthentication(options =>
-{
-    options.Domain = builder.Configuration["Auth0:Domain"];
-    options.ClientId = builder.Configuration["Auth0:ClientId"];
-});
-
 builder.Services.AddControllers().AddJsonOptions(o => {
     o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
+
+// Auth0 configuration
+builder.Services.AddAuth0WebAppAuthentication(options =>
+{
+    options.Domain = builder.Configuration["Auth0:Domain"]!;
+    options.ClientId = builder.Configuration["Auth0:ClientId"]!;
+});
+
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = $"https://{builder.Configuration["Auth0:Domain"]}",
+            ValidateIssuer = true,
+            ValidateAudience = false
+        };
+    });
+
+// Azure Sql connection
+var connection = builder.Configuration["DB:AzureSqlConnection"]!;
+builder.Services.AddDbContext<JadeDbContext>(options =>
+    options.UseSqlServer(connection));
+
+// Singletons
+builder.Services.AddSingleton(new CosmosClient(builder.Configuration["DB:CosmosDbConnection"]!));
 
 // Swagger
 builder.Services.AddSwaggerGen();
@@ -41,7 +62,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Jade note taking swagger", Version = version, Description = "Refer to github for docs: https://github.com/jade-note-taking/api"});
     c.AddSignalRSwaggerGen();
 
-    // NOTE: oauth2 from swagger docs, add later
+    // TODO: oauth2 from swagger docs, add later
     // c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
     // {
     //     Type = SecuritySchemeType.OAuth2,
@@ -90,7 +111,6 @@ if (app.Environment.IsDevelopment()) {
 else
 {
     app.UseHttpsRedirection();
-    // app.UseExceptionHandler("/Error");
 }
 
 // Running app

@@ -28,7 +28,7 @@ namespace JadeApi.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ContentPositionId")
+                    b.Property<string>("CosmosId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

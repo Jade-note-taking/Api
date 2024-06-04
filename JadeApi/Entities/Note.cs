@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace JadeApi.Entities;
 
 [Table("Notes")]
-public class Note(Guid id, string name, string location, string contentPositionId)
+public class Note(Guid id, string name, string location, string cosmosId)
 {
     [Key]
     public Guid Id { get; set; } = id;
@@ -17,5 +17,11 @@ public class Note(Guid id, string name, string location, string contentPositionI
     public string Location { get; set; } = location;
 
     [Required]
-    public string ContentPositionId { get; set; } = contentPositionId;
+    public string CosmosId { get; set; } = cosmosId;
 }
+
+record CosmosNote(
+    string id,
+    string UserId, // for combined index with content (future thing probably, to improve search latency)
+    string Content
+);
