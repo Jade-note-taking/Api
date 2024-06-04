@@ -1,11 +1,18 @@
 using System.Text.Json.Serialization;
 using Auth0.AspNetCore.Authentication;
+using JadeApi.Data;
 using Microsoft.OpenApi.Models;
 using JadeApi.Hubs;
+using Microsoft.EntityFrameworkCore;
 
 const string version = "v0.0.0";
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connection = builder.Configuration["DB:AzureSqlConnection"] ?? "CONFIGURATION DB:AZURESQLCONNECTION NOT FOUND";
+
+builder.Services.AddDbContext<JadeDbContext>(options =>
+    options.UseSqlServer(connection));
 
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
