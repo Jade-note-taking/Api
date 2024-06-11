@@ -3,25 +3,28 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace JadeApi.Entities;
 
-[Table("Notes")]
-public class Note(Guid id, string name, string location, string cosmosId)
+[Table("Note")]
+public class Note
 {
     [Key]
-    public Guid Id { get; set; } = id;
+    public string Id { get; set; }
+
+    [Required]
+    public string UserId { get; set; }
 
     [Required]
     [MaxLength(100)]
-    public string Name { get; set; } = name;
+    public string Name { get; set; }
+
+    public string? Location { get; set; }
 
     [Required]
-    public string Location { get; set; } = location;
-
-    [Required]
-    public string CosmosId { get; set; } = cosmosId;
+    public string CosmosId { get; set; }
 }
 
 record CosmosNote(
     string id,
-    string UserId, // for combined index with content (future thing probably, to improve search latency)
     string Content
-);
+)
+{
+}

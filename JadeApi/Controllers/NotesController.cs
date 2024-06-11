@@ -1,28 +1,44 @@
-﻿using JadeApi.Entities;
+﻿using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using JadeApi.Data;
+using JadeApi.Entities;
+using JadeApi.Helpers;
 using JadeApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
 
 namespace JadeApi.Controllers;
 
 [Route("Notes")]
 [ApiController]
-public class NotesController(CosmosClient cosmosClient) : Controller
+public class NotesController(CosmosClient cosmosClient, JadeDbContext context) : Controller
 {
-    private readonly CosmosClient _cosmosClient = cosmosClient;
+    [Authorize]
+    [HttpGet("")]
+    public async Task<ActionResult> All()
+    {
+        var userId = User.Claims.GetUserId();
+        var query = context.Notes.AsQueryable();
+        query.Where(n => n.UserId == userId);
+        var results = await query.ToListAsync();
+
+        return Ok(results);
+    }
 
     [Authorize]
     [HttpGet("{noteId}")]
-    public async Task<ActionResult> All(string noteId)
+    public async Task<ActionResult> Note(string noteId)
     {
-        // var cosmosNote = new CosmosNote(DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), "userid here", "some content here as well");
-        // await container.CreateItemAsync(cosmosNote);
+        var userId = User.Claims.GetUserId();
+        var cosmosNoteId = MD5.HashData(Encoding.UTF8.GetBytes($"{userId}{noteId}")).ToHex();
 
         try
         {
-            var note = await _cosmosClient.GetContainer().ReadItem<CosmosNote>(noteId);
-            return Ok(note);
+            var note = await cosmosClient.GetContainer().ReadItem<CosmosNote>(cosmosNoteId);
+            return Ok(note.Content);
         }
         catch
         {
