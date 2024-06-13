@@ -25,68 +25,94 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
     //     await base.OnConnectedAsync();
     // }
 
-    [SignalRMethod("Create")]
-    public async Task Create()
+    private string Md5Hash(string input) => MD5.HashData(Encoding.UTF8.GetBytes(input)).ToHex();
+    private string Md5Hash(byte[] input) => MD5.HashData(input).ToHex();
+    private string? GetUserIdentifier() => Context.UserIdentifier?.Split("|").Last();
+
+    private async Task<string?> GetUserId()
     {
-        // Create note and sent it with Note.Create
-        // Check weather startLocation is correct
+        var userId = GetUserIdentifier();
+        if (userId == null) return null;
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user.{userId}");
 
-        // var userId = Context.User.Claims.GetUserId();
-        var userId = "107707286267679057274";
-        var theNoteId = MD5.HashData(Guid.NewGuid().ToByteArray()).ToHex();
-        var cosmosId = MD5.HashData(Encoding.UTF8.GetBytes($"{userId}{theNoteId}")).ToHex();
+        return userId;
+    }
 
-        var SqlNote = new Note
+    private async Task SentToUser(string method, object? arg1=null)
+    {
+        var userId = GetUserIdentifier();
+        if (userId == null) return;
+
+        await Clients.Group($"user.{userId}").SendAsync(method, arg1);
+    }
+
+    private async Task SentToUser(string method, object? arg1=null, object? arg2=null)
+    {
+        var userId = GetUserIdentifier();
+        if (userId == null) return;
+
+        await Clients.Group($"user.{userId}").SendAsync(method, arg1, arg2);
+    }
+
+    [SignalRMethod("Create")]
+    public async Task Create(string noteName, string noteLocation, string noteContent)
+    {
+        var userId = await GetUserId();
+        if (userId == null) return;
+
+        var theNoteId = Md5Hash(Guid.NewGuid().ToByteArray());
+        var cosmosId = Md5Hash($"{userId}{theNoteId}");
+
+        // Persisting sql note
+        var sqlNote = new Note
         {
             Id = theNoteId,
             UserId = userId,
-            Name = "TEST NAME OF NOTE",
-            Location = null,
+            Name = noteName,
+            Location = noteLocation,
             CosmosId = cosmosId
         };
-
-        _context.Notes.Add(SqlNote);
+        _context.Notes.Add(sqlNote);
         await _context.SaveChangesAsync();
 
-        var cosmosNote = new CosmosNote(cosmosId, "THE CONTENT OF THE NOTE HERE HELLO YEARH BOYYY");
-
+        // Persisting nosql note
+        var cosmosNote = new CosmosNote(cosmosId, noteContent ?? "");
         await _cosmosClient.GetContainer().CreateItemAsync(cosmosNote);
 
-        // TODO: Make groups of client, you don't want to send e verywone a message
-        await Clients.Client(userId).SendAsync("Note.Create");
+        await SentToUser("Note.Create", sqlNote);
     }
 
     [SignalRMethod("UpdateContent")]
-    public async Task UpdateContent(string cosmosId, string content)
+    public async Task UpdateContent(string noteId, string content)
     {
-        // perform check weather cosmosId belongs to the user
+        var userId = await GetUserId();
+        var cosmosId = Md5Hash($"{userId}{noteId}");
 
-        // TODO: In the future make it possible to sent not all the content but a partial content, reducing network overhead
+        // TODO: Make it possible to sent not all the content but a partial content, reducing network overhead
         await _cosmosClient.GetContainer().UpsertItemAsync(new CosmosNote(cosmosId, content));
 
-        await Clients.All.SendAsync($"Note.UpdateContent.{cosmosId}", content);
+        await SentToUser($"Note.UpdateContent.{cosmosId}", content);
     }
 
     [SignalRMethod("Update")]
     public async Task Update(string noteId, string name, string location)
     {
-        // perform check weather cosmosId belongs to the user
-
+        var userId = await GetUserId();
+        var cosmosId = Md5Hash($"{userId}{noteId}");
         var existingNote = await _context.Notes.FindAsync(noteId);
         if (existingNote != null)
         {
             existingNote.Name = name;
             existingNote.Location = location;
             await _context.SaveChangesAsync();
+            await SentToUser($"Note.Update.{cosmosId}", name, location);
         }
-
-        // await Clients.All.SendAsync("Note.Update", existingNote.CosmosId, existingNote);
     }
 
     [SignalRMethod("Move")]
     public async Task Move(string cosmosId, string newFolderId, string oldFolderId)
     {
-        // Perform check weather cosmosId belongs to the user
+            var userId = await GetUserId();
         // Perform check on newFolderId and oldFolderId presence
         // Move in database
 
@@ -96,6 +122,7 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
     [SignalRMethod("Delete")]
     public async Task Delete(string cosmosId)
     {
+        var userId = await GetUserId();
         // Perform check weather cosmosId belongs to the user
         // Remove note from database
 
@@ -105,6 +132,7 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
     [SignalRMethod("Archive")]
     public async Task Archive(string cosmosId)
     {
+        var userId = await GetUserId();
         // Perform check weather cosmosId belongs to the user
         // Archive note
 

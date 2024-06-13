@@ -45,6 +45,19 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuer = true,
             ValidateAudience = false
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                context.Token = accessToken;
+
+                return Task.CompletedTask;
+            }
+        };
+
     });
 
 // Azure Sql connection
