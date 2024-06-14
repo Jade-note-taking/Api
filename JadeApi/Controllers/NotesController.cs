@@ -28,8 +28,8 @@ public class NotesController(CosmosClient cosmosClient, JadeDbContext context) :
     }
 
     [Authorize]
-    [HttpGet("{noteId}")]
-    public async Task<ActionResult> Note(string noteId)
+    [HttpGet("content/{noteId}")]
+    public async Task<ActionResult> NoteContent(string noteId)
     {
         var userId = User.Claims.GetUserId();
         var cosmosNoteId = MD5.HashData(Encoding.UTF8.GetBytes($"{userId}{noteId}")).ToHex();
@@ -43,5 +43,16 @@ public class NotesController(CosmosClient cosmosClient, JadeDbContext context) :
         {
             return NotFound();
         }
+    }
+
+    [Authorize]
+    [HttpGet("{noteId}")]
+    public async Task<ActionResult> Note(string noteId)
+    {
+        var userId = User.Claims.GetUserId();
+        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId && n.Id == noteId);
+        var note = await query.FirstAsync();
+
+        return Ok(note);
     }
 }

@@ -44,6 +44,7 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
         if (userId == null) return;
 
         await Clients.Group($"user.{userId}").SendAsync(method, arg1);
+        // await Clients.All.SendAsync(method, arg1);
     }
 
     private async Task SentToUser(string method, object? arg1=null, object? arg2=null)
@@ -52,6 +53,14 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
         if (userId == null) return;
 
         await Clients.Group($"user.{userId}").SendAsync(method, arg1, arg2);
+        // await Clients.All.SendAsync(method, arg1, arg2);
+    }
+
+    // Adding the user to its group
+    [SignalRMethod("Init")]
+    public async Task Init()
+    {
+        await GetUserId();
     }
 
     [SignalRMethod("Create")]
