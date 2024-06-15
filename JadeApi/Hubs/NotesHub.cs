@@ -137,6 +137,19 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
         note.Archive = true;
         await _context.SaveChangesAsync();
 
-        await SentToUser("Note.Archive", noteId);
+        await SentToUser("Note.Archive", note);
+    }
+
+    [SignalRMethod("Inbox")]
+    public async Task Inbox(string noteId)
+    {
+        var userId = await GetUserId();
+
+        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId && n.Id == noteId);
+        var note = await query.FirstAsync();
+        note.Archive = false;
+        await _context.SaveChangesAsync();
+
+        await SentToUser("Note.Inbox", note);
     }
 }

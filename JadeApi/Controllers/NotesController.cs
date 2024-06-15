@@ -28,6 +28,17 @@ public class NotesController(CosmosClient cosmosClient, JadeDbContext context) :
     }
 
     [Authorize]
+    [HttpGet("archive")]
+    public async Task<ActionResult> Archive()
+    {
+        var userId = User.Claims.GetUserId();
+        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId && n.Archive == true);
+        var results = await query.ToListAsync();
+
+        return Ok(results);
+    }
+
+    [Authorize]
     [HttpGet("content/{noteId}")]
     public async Task<ActionResult> NoteContent(string noteId)
     {
