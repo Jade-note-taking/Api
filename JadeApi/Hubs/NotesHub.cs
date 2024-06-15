@@ -7,6 +7,7 @@ using JadeApi.Helpers;
 using JadeApi.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
 using SignalRSwaggerGen.Attributes;
 
 namespace JadeApi.Hubs;
@@ -16,14 +17,6 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
 {
     private readonly JadeDbContext _context = context;
     private readonly CosmosClient _cosmosClient = cosmosClient;
-
-    // public override async Task OnConnectedAsync()
-    // {
-    //     var user = Context.User;
-    //     // Access user information (e.g., user.Claims) to get Auth0 user details
-    //     // Perform actions based on user identity
-    //     await base.OnConnectedAsync();
-    // }
 
     private string Md5Hash(string input) => MD5.HashData(Encoding.UTF8.GetBytes(input)).ToHex();
     private string Md5Hash(byte[] input) => MD5.HashData(input).ToHex();
@@ -118,33 +111,32 @@ public class NotesHub(JadeDbContext context, CosmosClient cosmosClient) : Hub
         }
     }
 
-    [SignalRMethod("Move")]
-    public async Task Move(string cosmosId, string newFolderId, string oldFolderId)
-    {
-            var userId = await GetUserId();
-        // Perform check on newFolderId and oldFolderId presence
-        // Move in database
-
-        await Clients.All.SendAsync("Note.Move", cosmosId, newFolderId, oldFolderId);
-    }
-
     [SignalRMethod("Delete")]
-    public async Task Delete(string cosmosId)
+    public async Task Delete(string noteId)
     {
         var userId = await GetUserId();
-        // Perform check weather cosmosId belongs to the user
-        // Remove note from database
+        var cosmosId = Md5Hash($"{userId}{noteId}");
 
-        await Clients.All.SendAsync("Note.Delete", cosmosId);
+        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId && n.Id == noteId);
+        var note = await query.FirstAsync();
+        _context.Remove(note);
+        await _context.SaveChangesAsync();
+
+        await _cosmosClient.DeleteItem<CosmosNote>(cosmosId);
+
+        await SentToUser("Note.Delete", noteId);
     }
 
     [SignalRMethod("Archive")]
-    public async Task Archive(string cosmosId)
+    public async Task Archive(string noteId)
     {
         var userId = await GetUserId();
-        // Perform check weather cosmosId belongs to the user
-        // Archive note
 
-        await Clients.All.SendAsync("Note.Archive", cosmosId);
+        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId && n.Id == noteId);
+        var note = await query.FirstAsync();
+        note.Archive = true;
+        await _context.SaveChangesAsync();
+
+        await SentToUser("Note.Archive", noteId);
     }
 }

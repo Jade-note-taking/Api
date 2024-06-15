@@ -3,6 +3,7 @@ using JadeApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JadeApi.Migrations
 {
     [DbContext(typeof(JadeDbContext))]
-    partial class JadeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240615005149_Adding_Archive_property_to_note_table")]
+    partial class Adding_Archive_property_to_note_table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -19,4 +19,14 @@ public static class CosmosService
     {
         return await container.ReadItemAsync<T>(itemId, new PartitionKey(itemId));
     }
+
+    public static async Task<T> DeleteItem<T>(this CosmosClient client, string itemId)
+    {
+        return await client.GetContainer().DeleteItemAsync<T>(itemId, new PartitionKey(itemId));
+    }
+
+    public static async Task<T> DeleteItem<T>(this Container container, string itemId)
+    {
+        return await container.DeleteItemAsync<T>(itemId, new PartitionKey(itemId));
+    }
 }

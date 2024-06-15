@@ -20,6 +20,8 @@ public class Note
 
     [Required]
     public string CosmosId { get; set; }
+
+    public bool Archive { get; set; }
 }
 
 record CosmosNote(

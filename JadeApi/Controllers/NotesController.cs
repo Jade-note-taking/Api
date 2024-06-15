@@ -21,7 +21,7 @@ public class NotesController(CosmosClient cosmosClient, JadeDbContext context) :
     public async Task<ActionResult> All()
     {
         var userId = User.Claims.GetUserId();
-        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId);
+        var query = context.Notes.AsQueryable().Where(n => n.UserId == userId && n.Archive == false);
         var results = await query.ToListAsync();
 
         return Ok(results);
